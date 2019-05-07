@@ -65,44 +65,44 @@ if __name__ == '__main__':
     # plt.show()
     
     
-    # with open('station_data.pickle', 'rb') as f:
-    #     data = pickle.load(f)
-    # map = plot_stations(data['stations'])
-    # fig = plt.figure()
-    # ax1 = fig.add_axes([0.1, 0.1, 0.8, 0.8])
-    # map.ax = ax1
-    # shp_info = map.readshapefile('CHN_adm_shp/CHN_adm3', 'states', drawbounds=False)
-    #
-    # for info, shp in zip(map.states_info, map.states):
-    #     proid = info['NAME_1']
-    #     if proid == 'Sichuan':
-    #         poly = Polygon(shp, facecolor='w', edgecolor='b', lw=0.2)
-    #         ax1.add_patch(poly)
-    #
-    # map.drawcountries()
-    # # map.scatter(x, y, marker='o', color='m')
-    # # map.drawcoastlines()
-    # plt.show()
-
-
-
+    with open('station_data.pickle', 'rb') as f:
+        data = pickle.load(f)
+    map = plot_stations(data['stations'])
     fig = plt.figure()
     ax1 = fig.add_axes([0.1, 0.1, 0.8, 0.8])
-    bmap = Basemap(llcrnrlon=115, llcrnrlat=23, urcrnrlon=121, urcrnrlat=29,
-                   projection='lcc', lat_1=33, lat_2=45, lon_0=120, ax=ax1)
-    # bmap = Basemap(llcrnrlon=102, llcrnrlat=29, urcrnrlon=106, urcrnrlat=32,
-    #                ax=ax1)
+    map.ax = ax1
+    shp_info = map.readshapefile('CHN_adm_shp/CHN_adm3', 'states', drawbounds=False)
 
-    shp_info = bmap.readshapefile('CHN_adm_shp/CHN_adm3', 'states', drawbounds=False)
-
-    for info, shp in zip(bmap.states_info, bmap.states):
+    for info, shp in zip(map.states_info, map.states):
         proid = info['NAME_1']
         if proid == 'Sichuan':
             poly = Polygon(shp, facecolor='w', edgecolor='b', lw=0.2)
             ax1.add_patch(poly)
 
-    bmap.drawcoastlines()
-    bmap.drawcountries()
-    bmap.drawparallels(np.arange(23, 29, 2), labels=[1, 0, 0, 0])
-    bmap.drawmeridians(np.arange(115, 121, 2), labels=[0, 0, 0, 1])
+    map.drawcountries()
+    # map.scatter(x, y, marker='o', color='m')
+    # map.drawcoastlines()
     plt.show()
+
+
+
+    # fig = plt.figure()
+    # ax1 = fig.add_axes([0.1, 0.1, 0.8, 0.8])
+    # bmap = Basemap(llcrnrlon=115, llcrnrlat=23, urcrnrlon=121, urcrnrlat=29,
+    #                projection='lcc', lat_1=33, lat_2=45, lon_0=120, ax=ax1)
+    # # bmap = Basemap(llcrnrlon=102, llcrnrlat=29, urcrnrlon=106, urcrnrlat=32,
+    # #                ax=ax1)
+    #
+    # shp_info = bmap.readshapefile('CHN_adm_shp/CHN_adm3', 'states', drawbounds=False)
+    #
+    # for info, shp in zip(bmap.states_info, bmap.states):
+    #     proid = info['NAME_1']
+    #     if proid == 'Sichuan':
+    #         poly = Polygon(shp, facecolor='w', edgecolor='b', lw=0.2)
+    #         ax1.add_patch(poly)
+    #
+    # bmap.drawcoastlines()
+    # bmap.drawcountries()
+    # bmap.drawparallels(np.arange(23, 29, 2), labels=[1, 0, 0, 0])
+    # bmap.drawmeridians(np.arange(115, 121, 2), labels=[0, 0, 0, 1])
+    # plt.show()

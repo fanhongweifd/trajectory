@@ -81,7 +81,50 @@ def get_rise_trend(stations_info, time_step=5, pollution_increase=50, pollution_
     return stations_trend
                     
     
+def get_reasonable_trans(begin_station, end_station):
+    """
+    判断从begin_station传输到end_station是否合理，判断准则如下：
+    如果 end_station 不是成都市区内的国控站，那么：
+    1. end_station要比begin_station距离成都市区更近
+    2. end_station到成都市区的方向和begin_station到成都市区的方向要一致，或之间的夹角小于某个角度（这是确保路线上不会有大的波动）
+    这样提前将每个国控站点有可能传播到的下一个站点计算出来
+    :param begin_station: 起始站点
+    :param end_station: 下一个站点
+    :return:
+    """
+    
+    pass
 
+
+def calc_wind_time(begin_station_wind, end_station_wind, angle_thres=30, long_time=24):
+    """
+    判断begin_station的风能否吹到end_station，如果可以，在什么区间段内能够吹到，判断准则如下：
+    1. begin_station的风向与begin_station到end_station的方向间的夹角应该小于某个角度（angle_thres）
+    2. 根据风速的区间来计算到达end_station的最短时间和最长时间(这里设置了最长时间不能超过24小时，不然不可信)
+    3. begin_station_wind可以时一个list，如果是这样，那么应该限定风向间的方差，这个后面加
+    
+    :param begin_station_wind:
+    :param end_station_wind:
+    :return:
+    """
+    pass
+
+
+def get_corr_station(begin_station, end_station, corr = 0.8):
+    """
+    判断两站点间的相关系数，若最大的相关系数大于设定值，则判定二者相关
+    :return:
+    """
+    pass
+
+
+def get_trajectory(begin_station):
+    """
+    给出雾霾上升的站点的轨迹
+    :param begin_station:
+    :return:
+    """
+    pass
 
 
 if __name__ == '__main__':

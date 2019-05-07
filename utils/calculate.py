@@ -47,16 +47,29 @@ def getDistance(latA, lonA, latB, lonB):
     return distance
 
 
+def sub_angle(angle_1, angle_2):
+    """
+    计算两个方向间的夹角：
+    :param angle_1:
+    :param angle_2:
+    :return: angle
+    """
+    angle = abs(angle_1 - angle_2)
+    if angle>180:
+        angle = 360-angle
+    return angle
+    
+
+
 class CalcData():
+    
     def __init__(self, station_location=None):
         self.station_location = station_location
         
     def inter_distance(self, ori_location, station_location=None):
-        
         assert not (station_location == None and self.station_location == None), "station_location is empty"
         if station_location==None:
             station_location = self.station_location
-            
         for location in ori_location:
             longitude = ori_location[location]['longitude']
             latitude = ori_location[location]['latitude']
@@ -79,7 +92,20 @@ class CalcData():
                     ori_location[location]['min_distance_station'] = station_name
                     
         return ori_location
+    
+    
+class CalcAngleDistance():
+    """
+    计算从ori_station到station_location的距离和角度
+    """
+    
+    def __init__(self, station_location):
+        self.station_location = station_location
         
+    def angle_distance(self,ori_station):
+        angle = getDegree(ori_station['latitude'], ori_station['longitude'], self.station_location['latitude'], self.station_location['longitude'])
+        distance = getDistance(ori_station['latitude'], ori_station['longitude'], self.station_location['latitude'], self.station_location['longitude'])
+        return angle, distance
         
             
 if __name__ == '__main__':
