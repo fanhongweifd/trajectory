@@ -3,6 +3,9 @@ import os
 import sys
 import pickle
 from collections import defaultdict
+from utils.calculate import sub_angle, merge_vector
+from data.public_parameter import wind_power_set
+import numpy as np
 
 """
 _____________________________________General description__________________________________________
@@ -81,7 +84,7 @@ def get_rise_trend(stations_info, time_step=5, pollution_increase=50, pollution_
     return stations_trend
                     
     
-def get_reasonable_trans(begin_station, end_station):
+def get_reasonable_trans(begin_station, end_station, max_angle=45):
     """
     判断从begin_station传输到end_station是否合理，判断准则如下：
     如果 end_station 不是成都市区内的国控站，那么：
@@ -92,21 +95,36 @@ def get_reasonable_trans(begin_station, end_station):
     :param end_station: 下一个站点
     :return:
     """
+    if begin_station['center_distance'] < end_station['center_distance']:
+        return False
+    if sub_angle(begin_station['center_distance'], end_station['center_distance'])> max_angle:
+        return False
+    return True
     
-    pass
+    
 
 
-def calc_wind_time(begin_station_wind, end_station_wind, angle_thres=30, long_time=24):
+def calc_wind_time(begin_station_wind, end_station, angle=30, long_time=24):
     """
     判断begin_station的风能否吹到end_station，如果可以，在什么区间段内能够吹到，判断准则如下：
     1. begin_station的风向与begin_station到end_station的方向间的夹角应该小于某个角度（angle_thres）
     2. 根据风速的区间来计算到达end_station的最短时间和最长时间(这里设置了最长时间不能超过24小时，不然不可信)
-    3. begin_station_wind可以时一个list，如果是这样，那么应该限定风向间的方差，这个后面加
+    3. begin_station_wind可以是一个list，如果是这样，那么应该限定风向间的方差，这个后面加
     
     :param begin_station_wind:
-    :param end_station_wind:
+    :param end_station:
     :return:
     """
+    wind_direction = begin_station_wind['wind_direction']
+    wind_min_speed = [wind_power_set[wind]['min'] for wind in begin_station_wind['wind_power']]
+    wind_max_speed = [wind_power_set[wind]['max'] for wind in begin_station_wind['wind_power']]
+    merge_min_speed,  merge_angle = merge_vector(wind_min_speed, wind_direction)
+    merge_max_speed, merge_angle = merge_vector(wind_max_speed, wind_direction)
+    angle = begin_station_wind['angle'][end_station]
+    distance = begin_station_wind['distance'][end_station]
+    if sub_angle(merge_angle, angle) > angle:
+        return False
+    ## to do 计算时间区间
     pass
 
 

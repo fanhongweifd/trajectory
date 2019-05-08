@@ -6,8 +6,12 @@ from collections import defaultdict
 import time
 import pickle
 import chardet
-from calculate import CalcData
+from calculate import CalcData, CalcAngleDistance
 from tools import *
+from model.pollution_corr_model import get_reasonable_trans
+
+
+chengdu_stations = ['1431A', '1432A', '1433A', '1434A', '1437A', '1438A', '2880A', '3136A']
 
 
 def load_environment_data(dir_path):
@@ -41,7 +45,7 @@ def load_environment_data(dir_path):
             if not code in stations:
                 stations[code]['longitude'] = longitude
                 stations[code]['latitude'] = latitude
-            if not stamp_time in  stations:
+            if not stamp_time in  stations_info:
                 stations_info[stamp_time] = defaultdict(dict)
             stations_info[stamp_time][code]['pm25'] = pm2_5
     
@@ -121,9 +125,38 @@ def merge_data(stations, stations_info, citys, citys_wind):
     return stations, stations_info
             
     
+def get_center_angle_distance(stations, center):
+    """
+    对于每个station，计算其到中心点的方向和距离。这个中心点选取成都的中心点的经纬度(latitude = 30.67, longitude = 104.06)
+    :param stations:
+    :param center:
+    :return:
+    """
+    calc = CalcAngleDistance(center)
+    for station in stations:
+        stations[station]['center_angle'], stations[station]['center_distance'] = calc.angle_distance(stations[station])
+    return stations
 
 
-if __name__ == '__main__':
+def get_next_reasonable_station(stations, chengdu_stations):
+    """
+    每个站点（除了成都市的站点）向成都市方向传播的下一个可能的站点集合
+    :return:
+    """
+    station_set = set(stations.keys())
+    
+    for station in  station_set:
+        stations[station]['next_reasonable_station'] = set(chengdu_stations)
+        out_stations =  station_set - set(chengdu_stations) -set(station)
+        for next_station in out_stations:
+            reasonable = get_reasonable_trans(stations[station], stations[next_station])
+            if reasonable:
+                stations[station]['next_reasonable_station'].add(next_station)
+    return stations
+    
+        
+    
+def main():
     stations_info, stations = load_environment_data('/data/tag/pytorch/trajectory/空气质量数据')
     save_data = {"stations_info":stations_info,
                  "stations":stations}
@@ -134,7 +167,7 @@ if __name__ == '__main__':
                  "citys_wind":citys_wind}
     with open('city_wind.pickle', 'wb') as f:
         pickle.dump(save_data, f)
-    
+
     with open('city_wind.pickle','rb') as f:
         wind_data = pickle.load(f)
     with open('station_data.pickle','rb') as f:
@@ -144,7 +177,28 @@ if __name__ == '__main__':
     citys = wind_data['citys']
     citys_wind = wind_data['citys_wind']
     stations, stations_info = merge_data(stations, stations_info, citys, citys_wind)
+    chengdu_center = dict(latitude = 30.67, longitude = 104.06)
+    stations = get_center_angle_distance(stations, chengdu_center)
+    stations = get_next_reasonable_station(stations, chengdu_stations)
     save_data = {"stations_info":stations_info,
                  "stations":stations}
     with open('train_data.pickle', 'wb') as f:
         pickle.dump(save_data, f)
+        
+
+if __name__ == '__main__':
+    # main()
+    # print('Finish load data.')
+
+
+    with open('train_data.pickle', 'rb') as f:
+        data = pickle.load(f)
+    data
+    # station_info = data['stations_info']
+    # print(len(station_info.keys()))
+    # num = 0
+    # for name, value in station_info.items():
+    #     num += len(value.keys())
+    # print(num)
+    
+    

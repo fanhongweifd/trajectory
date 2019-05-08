@@ -1,5 +1,29 @@
 from math import *
+import numpy as np
 
+
+def merge_vector(value_list, angle_list):
+    """
+    合并向量列表，其中向量的值为value_list，向量的方向角为angle_list
+    :param value_list:
+    :param angle_list:
+    :return:
+    """
+    assert len(value_list)==len(angle_list), "len(value_list)=%s, len(angle_list)=%s, must be equal."%(len(value_list),len(angle_list))
+    angle_list = [angle*math.pi/180 for angle in angle_list]
+    x_list = y_list = []
+    for i in len(value_list):
+        x_list.append(math.cos(angle_list[i])*value_list[i])
+        y_list.append(math.sin(angle_list[i])*value_list[i])
+    x = sum(x_list)
+    y = sum(y_list)
+    value = (x**2 + y**2)**0.5
+    angle = math.atan2(y, x) * 180/math.pi
+    if angle < 0:
+        angle = angle+360
+    return value, angle
+    
+    
 
 def getDegree(latA, lonA, latB, lonB):
     """
@@ -59,6 +83,15 @@ def sub_angle(angle_1, angle_2):
         angle = 360-angle
     return angle
     
+    
+def get_corr(list1, list2):
+    """
+    计算list1和list2的相关系数
+    :return:
+    """
+    corr = np.corrcoef([list1, list2])
+    corr = corr[0,1]
+    return corr
 
 
 class CalcData():
