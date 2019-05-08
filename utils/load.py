@@ -9,9 +9,9 @@ import chardet
 from calculate import CalcData, CalcAngleDistance
 from tools import *
 from model.pollution_corr_model import get_reasonable_trans
+from data.public_parameter import chengdu_stations
 
 
-chengdu_stations = ['1431A', '1432A', '1433A', '1434A', '1437A', '1438A', '2880A', '3136A']
 
 
 def load_environment_data(dir_path):

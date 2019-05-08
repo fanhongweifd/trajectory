@@ -19,3 +19,5 @@ wind_power_set = {
     '16': dict(min_speed=184, max=201),
     '17': dict(min_speed=202, max=220),
 }
+
+chengdu_stations = ['1431A', '1432A', '1433A', '1434A', '1437A', '1438A', '2880A', '3136A']
