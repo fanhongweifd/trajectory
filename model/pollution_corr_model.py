@@ -179,18 +179,33 @@ def check_next_station(begin_station, end_station, possible_trend, corr_thres=0.
     return arrive_time
     
 
-def get_trajectory(begin_station, stations, stations_info):
+def get_trajectory(begin_station, stations, possible_trend, center_stations):
     """
     给出雾霾上升的起始站点，并计算出从该站点开始传播的雾霾的轨迹
     :param begin_station:
     :return:
     """
     # 从可能到的传播站点中找到符合要求的站点
-    pass
+    for next_station in stations[begin_station["name"]]['next_reasonable_station']:
+        arrive_time = check_next_station(begin_station, next_station, possible_trend)
+        if arrive_time:
+            if next_station in center_stations:
+                # 到终点了，怎么处理？
+                return {}
+            else:
+                next_station_info = {"date_time": arrive_time,
+                                     "wind_direction": possible_trend[arrive_time][next_station]['wind_direction'],
+                                     "wind_power": possible_trend[arrive_time][next_station]['wind_power'],
+                                     "angle": stations[next_station]['angle'],
+                                     "distance": stations[next_station]['distance'],
+                                     "name": next_station
+                                     }
+                get_trajectory(next_station_info, stations, possible_trend, center_stations)
 
 
 if __name__ == '__main__':
     with open('../utils/train_data.pickle', 'rb') as f:
         data = pickle.load(f)
     result = get_rise_trend(data['stations_info'])
+    result_possible = get_rise_trend(data['stations_info'], pollution_increase=30, pollution_thres=80)
     result
