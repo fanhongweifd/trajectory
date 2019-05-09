@@ -5,6 +5,8 @@ import pickle
 from collections import defaultdict
 from utils.calculate import sub_angle, merge_vector, get_corr
 from data.public_parameter import wind_power_set
+from data.public_parameter import chengdu_stations
+from utils.tools import timestamp_to_string
 import numpy as np
 import math
 
@@ -103,7 +105,7 @@ def get_reasonable_trans(begin_station, end_station, max_angle=45):
     return True
 
 
-def calc_wind_time(begin_station_wind, end_station, angle=30, long_time=24):
+def calc_wind_time(begin_station_wind, end_station, includedAngle=30, long_time=24):
     """
     判断begin_station的风能否吹到end_station，如果可以，在什么区间段内能够吹到，判断准则如下：
     1. begin_station的风向与begin_station到end_station的方向间的夹角应该小于某个角度（angle_thres）
@@ -122,7 +124,7 @@ def calc_wind_time(begin_station_wind, end_station, angle=30, long_time=24):
     angle = begin_station_wind['angle'][end_station]
     distance = begin_station_wind['distance'][end_station]
     include_angle = sub_angle(merge_angle, angle)
-    if include_angle > angle:
+    if include_angle > includedAngle:
         return False
     # 计算到达的时间区间
     max_arrive_time = distance / (math.cos(include_angle * math.pi / 180) * merge_min_speed)
@@ -170,7 +172,7 @@ def check_next_station(begin_station, end_station, possible_trend, corr_thres=0.
     max_corr = False
     for each_time in possible_arrive_time:
         if end_station in possible_trend[each_time]:
-            corr = get_corr(possible_trend[each_time]['pm25'])
+            corr = get_corr(begin_station['pollution'], possible_trend[each_time][end_station]['pm25'])
             if max_corr < corr:
                 max_corr = corr
                 arrive_time = each_time
@@ -179,33 +181,75 @@ def check_next_station(begin_station, end_station, possible_trend, corr_thres=0.
     return arrive_time
     
 
-def get_trajectory(begin_station, stations, possible_trend, center_stations):
+def get_trajectory(begin_station, stations, possible_trend, center_stations, transfer_time=True ):
     """
     给出雾霾上升的起始站点，并计算出从该站点开始传播的雾霾的轨迹
     :param begin_station:
     :return:
     """
     # 从可能到的传播站点中找到符合要求的站点
+    next_stations = defaultdict(dict)
     for next_station in stations[begin_station["name"]]['next_reasonable_station']:
         arrive_time = check_next_station(begin_station, next_station, possible_trend)
         if arrive_time:
             if next_station in center_stations:
-                # 到终点了，怎么处理？
-                return {}
+                if transfer_time:
+                    next_stations[(next_station, timestamp_to_string(arrive_time))]
+                else:
+                    next_stations[(next_station, arrive_time)]
             else:
                 next_station_info = {"date_time": arrive_time,
                                      "wind_direction": possible_trend[arrive_time][next_station]['wind_direction'],
                                      "wind_power": possible_trend[arrive_time][next_station]['wind_power'],
+                                     "pollution": possible_trend[arrive_time][next_station]['pollution'],
                                      "angle": stations[next_station]['angle'],
                                      "distance": stations[next_station]['distance'],
                                      "name": next_station
                                      }
-                get_trajectory(next_station_info, stations, possible_trend, center_stations)
+                result = get_trajectory(next_station_info, stations, possible_trend, center_stations)
+                if result:
+                    if transfer_time:
+                        next_stations[(next_station, timestamp_to_string(arrive_time))] = result
+                    else:
+                        next_stations[(next_station, arrive_time)] = result
+    if next_stations:
+        return next_stations
+    
+    
+class CalcTrajectory:
+    
+    def __init__(self, center_stations, time_step=5, pollution_increase=50, pollution_thres=100,
+                 min_pollution_increase=30, min_pollution_thres=80):
+        self.time_step = time_step
+        self.pollution_increase = pollution_increase
+        self.pollution_thres = pollution_thres
+        self.min_pollution_increase = min_pollution_increase
+        self.min_pollution_thres = min_pollution_thres
+        self.center_stations = center_stations
+        
+    def begin(self, data):
+        stations = data['stations']
+        stations_info = data['stations_info']
+        start_pollution_stations = get_rise_trend(stations_info, pollution_increase=self.pollution_increase, pollution_thres=self.pollution_thres)
+        possible_pollution_stations = get_rise_trend(stations_info, pollution_increase=self.min_pollution_increase, pollution_thres=self.min_pollution_thres)
+        trajectory_result = defaultdict(dict)
+        for start_time in start_pollution_stations:
+            for station in start_pollution_stations[start_time]:
+                result = get_trajectory(start_pollution_stations[start_time][station], stations, possible_pollution_stations, self.center_stations)
+                if result:
+                    trajectory_result[start_time][station] = result
+        return trajectory_result
 
 
 if __name__ == '__main__':
     with open('../utils/train_data.pickle', 'rb') as f:
         data = pickle.load(f)
-    result = get_rise_trend(data['stations_info'])
-    result_possible = get_rise_trend(data['stations_info'], pollution_increase=30, pollution_thres=80)
+    possibe = get_rise_trend(data['stations_info'])
+    get_result = CalcTrajectory(chengdu_stations)
+    result = get_result.begin(data)
     result
+    
+    # possibe = get_rise_trend(data['stations_info'])
+    
+
+    

@@ -94,7 +94,7 @@ def get_corr(list1, list2):
     return corr
 
 
-class CalcData():
+class CalcData:
     
     def __init__(self, station_location=None):
         self.station_location = station_location
