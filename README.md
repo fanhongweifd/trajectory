@@ -32,4 +32,4 @@ See [trajectory_result](results/trajectory_result.pickle).
 - time_lag: 两个站点间污染发生的最大时间跨度
 
     
-<img src="data/Stations.png" width="100%" />  
+<img src="data/Stations.png" width="60%" />  
