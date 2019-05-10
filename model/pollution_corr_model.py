@@ -152,7 +152,7 @@ def check_station_corr(begin_station_value, end_station_value, corr_thres=0.8):
         return False
     
     
-def check_next_station(begin_station, end_station, possible_trend, corr_thres=0.8):
+def check_next_station(begin_station, end_station, possible_trend, time_lag, corr_thres=0.8):
     """
     看在现在时刻，根据当前的风速度，从begin_station传播到end_station是否可能
     :param begin_station:
@@ -162,7 +162,7 @@ def check_next_station(begin_station, end_station, possible_trend, corr_thres=0.
     :return:
     """
     # 先验证当前的风力风向传播到end_station的时间间隔
-    time_window = calc_wind_time(begin_station, end_station)
+    time_window = calc_wind_time(begin_station_wind=begin_station, end_station=end_station, long_time=time_lag)
     if not time_window:
         return False
     begin_time = begin_station['date_time']
@@ -183,7 +183,7 @@ def check_next_station(begin_station, end_station, possible_trend, corr_thres=0.
     return arrive_time
     
 
-def get_trajectory(begin_station, stations, possible_trend, center_stations, transfer_time=True ):
+def get_trajectory(begin_station, stations, possible_trend, center_stations, time_lag, transfer_time=True):
     """
     给出雾霾上升的起始站点，并计算出从该站点开始传播的雾霾的轨迹
     :param begin_station:
@@ -193,7 +193,7 @@ def get_trajectory(begin_station, stations, possible_trend, center_stations, tra
     next_stations = defaultdict(dict)
     for next_station in stations[begin_station["name"]]['next_reasonable_station']:
         if not ((next_station in center_stations) and (begin_station['name'] in center_stations)):
-            arrive_time = check_next_station(begin_station, next_station, possible_trend)
+            arrive_time = check_next_station(begin_station, next_station, possible_trend, time_lag)
             if arrive_time:
                 if next_station in center_stations:
                     if transfer_time:
@@ -209,7 +209,7 @@ def get_trajectory(begin_station, stations, possible_trend, center_stations, tra
                                          "distance": stations[next_station]['station_distance'],
                                          "name": next_station
                                          }
-                    result = get_trajectory(next_station_info, stations, possible_trend, center_stations)
+                    result = get_trajectory(next_station_info, stations, possible_trend, center_stations, time_lag)
                     if result:
                         if transfer_time:
                             next_stations[(next_station, timestamp_to_string(arrive_time))] = result
@@ -222,13 +222,14 @@ def get_trajectory(begin_station, stations, possible_trend, center_stations, tra
 class CalcTrajectory:
     
     def __init__(self, center_stations, time_step=5, pollution_increase=50, pollution_thres=100,
-                 min_pollution_increase=30, min_pollution_thres=80):
+                 min_pollution_increase=30, min_pollution_thres=80, time_lag=24):
         self.time_step = time_step
         self.pollution_increase = pollution_increase
         self.pollution_thres = pollution_thres
         self.min_pollution_increase = min_pollution_increase
         self.min_pollution_thres = min_pollution_thres
         self.center_stations = center_stations
+        self.time_lag = time_lag
         
     def begin(self, data):
         stations = data['stations']
@@ -246,7 +247,7 @@ class CalcTrajectory:
                                       "name": station,
                                       "distance": stations[station]['station_distance']
                                      }
-                result = get_trajectory(begin_station_info, stations, possible_pollution_stations, self.center_stations)
+                result = get_trajectory(begin_station_info, stations, possible_pollution_stations, self.center_stations, self.time_lag)
                 if result:
                     trajectory_result[timestamp_to_string(start_time)][station] = result
         return trajectory_result
