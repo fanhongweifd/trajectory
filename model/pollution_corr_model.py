@@ -117,10 +117,12 @@ def calc_wind_time(begin_station_wind, end_station, includedAngle=30, long_time=
     :return:
     """
     wind_direction = begin_station_wind['wind_direction']
-    wind_min_speed = [wind_power_set[wind]['min'] for wind in begin_station_wind['wind_power']]
-    wind_max_speed = [wind_power_set[wind]['max'] for wind in begin_station_wind['wind_power']]
+    wind_min_speed = [wind_power_set[int(wind)]['min'] for wind in begin_station_wind['wind_power']]
+    wind_max_speed = [wind_power_set[int(wind)]['max'] for wind in begin_station_wind['wind_power']]
     merge_min_speed, merge_angle = merge_vector(wind_min_speed, wind_direction)
     merge_max_speed, merge_angle = merge_vector(wind_max_speed, wind_direction)
+    print('begin_station:%s'%begin_station_wind['name'])
+    print("end_station:%s"%end_station)
     angle = begin_station_wind['angle'][end_station]
     distance = begin_station_wind['distance'][end_station]
     include_angle = sub_angle(merge_angle, angle)
@@ -172,7 +174,7 @@ def check_next_station(begin_station, end_station, possible_trend, corr_thres=0.
     max_corr = False
     for each_time in possible_arrive_time:
         if end_station in possible_trend[each_time]:
-            corr = get_corr(begin_station['pollution'], possible_trend[each_time][end_station]['pm25'])
+            corr = get_corr(begin_station['pollution'], possible_trend[each_time][end_station]['pollution'])
             if max_corr < corr:
                 max_corr = corr
                 arrive_time = each_time
@@ -190,28 +192,29 @@ def get_trajectory(begin_station, stations, possible_trend, center_stations, tra
     # 从可能到的传播站点中找到符合要求的站点
     next_stations = defaultdict(dict)
     for next_station in stations[begin_station["name"]]['next_reasonable_station']:
-        arrive_time = check_next_station(begin_station, next_station, possible_trend)
-        if arrive_time:
-            if next_station in center_stations:
-                if transfer_time:
-                    next_stations[(next_station, timestamp_to_string(arrive_time))]
-                else:
-                    next_stations[(next_station, arrive_time)]
-            else:
-                next_station_info = {"date_time": arrive_time,
-                                     "wind_direction": possible_trend[arrive_time][next_station]['wind_direction'],
-                                     "wind_power": possible_trend[arrive_time][next_station]['wind_power'],
-                                     "pollution": possible_trend[arrive_time][next_station]['pollution'],
-                                     "angle": stations[next_station]['angle'],
-                                     "distance": stations[next_station]['distance'],
-                                     "name": next_station
-                                     }
-                result = get_trajectory(next_station_info, stations, possible_trend, center_stations)
-                if result:
+        if not ((next_station in center_stations) and (begin_station['name'] in center_stations)):
+            arrive_time = check_next_station(begin_station, next_station, possible_trend)
+            if arrive_time:
+                if next_station in center_stations:
                     if transfer_time:
-                        next_stations[(next_station, timestamp_to_string(arrive_time))] = result
+                        next_stations[(next_station, timestamp_to_string(arrive_time))]
                     else:
-                        next_stations[(next_station, arrive_time)] = result
+                        next_stations[(next_station, arrive_time)]
+                else:
+                    next_station_info = {"date_time": arrive_time,
+                                         "wind_direction": possible_trend[arrive_time][next_station]['wind_direction'],
+                                         "wind_power": possible_trend[arrive_time][next_station]['wind_power'],
+                                         "pollution": possible_trend[arrive_time][next_station]['pollution'],
+                                         "angle": stations[next_station]['station_angle'],
+                                         "distance": stations[next_station]['station_distance'],
+                                         "name": next_station
+                                         }
+                    result = get_trajectory(next_station_info, stations, possible_trend, center_stations)
+                    if result:
+                        if transfer_time:
+                            next_stations[(next_station, timestamp_to_string(arrive_time))] = result
+                        else:
+                            next_stations[(next_station, arrive_time)] = result
     if next_stations:
         return next_stations
     
@@ -235,21 +238,28 @@ class CalcTrajectory:
         trajectory_result = defaultdict(dict)
         for start_time in start_pollution_stations:
             for station in start_pollution_stations[start_time]:
-                result = get_trajectory(start_pollution_stations[start_time][station], stations, possible_pollution_stations, self.center_stations)
+                begin_station_info = {"date_time": start_time,
+                                      "wind_direction": start_pollution_stations[start_time][station]['wind_direction'],
+                                      "wind_power": start_pollution_stations[start_time][station]['wind_power'],
+                                      "pollution": start_pollution_stations[start_time][station]['pollution'],
+                                      "angle": stations[station]['station_angle'],
+                                      "name": station,
+                                      "distance": stations[station]['station_distance']
+                                     }
+                result = get_trajectory(begin_station_info, stations, possible_pollution_stations, self.center_stations)
                 if result:
-                    trajectory_result[start_time][station] = result
+                    trajectory_result[timestamp_to_string(start_time)][station] = result
         return trajectory_result
 
 
 if __name__ == '__main__':
-    with open('../utils/train_data.pickle', 'rb') as f:
-        data = pickle.load(f)
-    possibe = get_rise_trend(data['stations_info'])
-    get_result = CalcTrajectory(chengdu_stations)
-    result = get_result.begin(data)
+    # with open('../utils/train_data.pickle', 'rb') as f:
+    #     data = pickle.load(f)
+    # get_result = CalcTrajectory(chengdu_stations)
+    # result = get_result.begin(data)
+    # with open('../results/result.pickle', 'wb') as f:
+    #     pickle.dump(result, f)
+    
+    with open('../results/result.pickle', 'rb') as f:
+        result = pickle.load(f)
     result
-    
-    # possibe = get_rise_trend(data['stations_info'])
-    
-
-    

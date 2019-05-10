@@ -1,5 +1,6 @@
 from math import *
 import numpy as np
+import math
 
 
 def merge_vector(value_list, angle_list):
@@ -12,7 +13,7 @@ def merge_vector(value_list, angle_list):
     assert len(value_list)==len(angle_list), "len(value_list)=%s, len(angle_list)=%s, must be equal."%(len(value_list),len(angle_list))
     angle_list = [angle*math.pi/180 for angle in angle_list]
     x_list = y_list = []
-    for i in len(value_list):
+    for i in range(len(value_list)):
         x_list.append(math.cos(angle_list[i])*value_list[i])
         y_list.append(math.sin(angle_list[i])*value_list[i])
     x = sum(x_list)
@@ -112,17 +113,18 @@ class CalcData:
                 ori_location[location]['angle'] = {}
                 
             for station_name, station_loc in station_location.items():
-                distance = getDistance(latitude, longitude, station_loc['latitude'], station_loc['longitude'])
-                angle = getDegree(latitude, longitude, station_loc['latitude'], station_loc['longitude'])
-                ori_location[location]['distance'][station_name] = distance
-                ori_location[location]['angle'][station_name] = angle
-                if not 'min_distance' in ori_location[location]:
-                    ori_location[location]['min_distance'] = distance
-                if not 'min_distance_station' in ori_location[location]:
-                    ori_location[location]['min_distance_station'] = station_name
-                if ori_location[location]['min_distance'] > distance:
-                    ori_location[location]['min_distance'] = distance
-                    ori_location[location]['min_distance_station'] = station_name
+                if station_name != location:
+                    distance = getDistance(latitude, longitude, station_loc['latitude'], station_loc['longitude'])
+                    angle = getDegree(latitude, longitude, station_loc['latitude'], station_loc['longitude'])
+                    ori_location[location]['distance'][station_name] = distance
+                    ori_location[location]['angle'][station_name] = angle
+                    if not 'min_distance' in ori_location[location]:
+                        ori_location[location]['min_distance'] = distance
+                    if not 'min_distance_station' in ori_location[location]:
+                        ori_location[location]['min_distance_station'] = station_name
+                    if ori_location[location]['min_distance'] > distance:
+                        ori_location[location]['min_distance'] = distance
+                        ori_location[location]['min_distance_station'] = station_name
                     
         return ori_location
     

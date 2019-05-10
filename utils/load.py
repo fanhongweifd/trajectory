@@ -10,7 +10,8 @@ from calculate import CalcData, CalcAngleDistance
 from tools import *
 from model.pollution_corr_model import get_reasonable_trans
 from data.public_parameter import chengdu_stations
-
+import math
+import copy
 
 
 
@@ -86,12 +87,30 @@ def load_wind_data(file_path, change_angle=True):
         stamp_time = int(time.mktime(time.strptime(pubtime[idx][0], "%Y/%m/%d %H:%M")))
         if not stamp_time in citys_wind:
             citys_wind[stamp_time] = defaultdict(dict)
-        if change_angle:
-            citys_wind[stamp_time][name]['wind_power'] = change_wind_angle(wind_power[idx][0])
-        else:
+        if not math.isnan(float(wind_power[idx][0])):
             citys_wind[stamp_time][name]['wind_power'] = wind_power[idx][0]
-        citys_wind[stamp_time][name]['wind_direction'] = wind_direction[idx][0]
+        if not math.isnan(float(wind_direction[idx][0])):
+            if change_angle:
+                citys_wind[stamp_time][name]['wind_direction'] = change_wind_angle(wind_direction[idx][0])
+            else:
+                citys_wind[stamp_time][name]['wind_direction'] = wind_direction[idx][0]
     return citys, citys_wind
+
+
+
+def pair_stations(stations):
+    """
+    计算国控站点之间的的距离和角度
+    :param stations:
+    :return:
+    """
+    ori_stations = copy.deepcopy(stations)
+    calc = CalcData(ori_stations)
+    ori_stations = calc.inter_distance(ori_stations)
+    for station in ori_stations:
+        stations[station]['station_distance'] = ori_stations[station]['distance']
+        stations[station]['station_angle'] = ori_stations[station]['angle']
+    return stations
 
 
 def pair_city_stations(stations, citys):
@@ -118,8 +137,10 @@ def merge_data(stations, stations_info, citys, citys_wind):
             for station_name in stations_info[date_time]:
                 min_distance_station = stations[station_name]['min_distance_station']
                 if min_distance_station in wind_info:
-                    stations_info[date_time][station_name]['wind_power'] = wind_info[min_distance_station]['wind_power']
-                    stations_info[date_time][station_name]['wind_direction'] = wind_info[min_distance_station]['wind_direction']
+                    if 'wind_power' in wind_info[min_distance_station]:
+                        stations_info[date_time][station_name]['wind_power'] = wind_info[min_distance_station]['wind_power']
+                    if 'wind_direction' in wind_info[min_distance_station]:
+                        stations_info[date_time][station_name]['wind_direction'] = wind_info[min_distance_station]['wind_direction']
         else:
             print('date time: %s not in wind information'% timestamp_to_string(date_time))
     return stations, stations_info
@@ -149,15 +170,17 @@ def get_next_reasonable_station(stations, chengdu_stations):
         stations[station]['next_reasonable_station'] = set(chengdu_stations)
         out_stations =  station_set - set(chengdu_stations) -set(station)
         for next_station in out_stations:
-            reasonable = get_reasonable_trans(stations[station], stations[next_station])
-            if reasonable:
-                stations[station]['next_reasonable_station'].add(next_station)
+            if next_station != station:
+                reasonable = get_reasonable_trans(stations[station], stations[next_station])
+                if reasonable:
+                    stations[station]['next_reasonable_station'].add(next_station)
     return stations
     
         
     
 def main():
     stations_info, stations = load_environment_data('/data/tag/pytorch/trajectory/空气质量数据')
+    stations = pair_stations(stations)
     save_data = {"stations_info":stations_info,
                  "stations":stations}
     with open('station_data.pickle', 'wb') as f:
@@ -187,13 +210,14 @@ def main():
         
 
 if __name__ == '__main__':
-    # main()
-    # print('Finish load data.')
+    main()
+    print('Finish load data.')
 
 
-    with open('train_data.pickle', 'rb') as f:
-        data = pickle.load(f)
-    data
+    # with open('train_data.pickle', 'rb') as f:
+    #     data = pickle.load(f)
+    # data
+    
     # station_info = data['stations_info']
     # print(len(station_info.keys()))
     # num = 0
