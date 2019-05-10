@@ -31,5 +31,6 @@ See [trajectory_result](results/trajectory_result.pickle).
 - min_pollution_thres: 最小污染物警戒阈值
 - time_lag: 两个站点间污染发生的最大时间跨度
 
-    
+
+## 国控站点分布   
 <img src="data/Stations.png" width="60%" />  
