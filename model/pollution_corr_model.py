@@ -261,6 +261,6 @@ if __name__ == '__main__':
     # with open('../results/result.pickle', 'wb') as f:
     #     pickle.dump(result, f)
     
-    with open('../results/result.pickle', 'rb') as f:
+    with open('../results/trajectory_result.pickle', 'rb') as f:
         result = pickle.load(f)
     result
