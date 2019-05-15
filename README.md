@@ -19,6 +19,12 @@
 sh run.sh
 ```
 
+## Plot
+```bash
+cd utils
+python plot.py
+```
+
 ## Result
 See [trajectory_result](results/trajectory_result.pickle).
 
