@@ -100,7 +100,7 @@ def get_reasonable_trans(begin_station, end_station, max_angle=45):
     """
     if begin_station['center_distance'] < end_station['center_distance']:
         return False
-    if sub_angle(begin_station['center_distance'], end_station['center_distance']) > max_angle:
+    if sub_angle(begin_station['center_angle'], end_station['center_angle']) > max_angle:
         return False
     return True
 
